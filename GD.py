@@ -414,14 +414,9 @@ class PCA:
 		self.initialize_z_and_w(k)
 		f_previous = np.inf
 		for i in range(self.max_iteration):
-			self.Z, signal = GD.gradient_descent(self.get_value_and_gradient_wrt_z,
-																					
-																self.Z,
-																turning_angle=math.pi/2)
+			self.Z, signal = GD.gradient_descent_l1(self.get_value_and_gradient_wrt_z, self.Z, turning_angle=math.pi/2)
 
-			self.W, signal = GD.gradient_descent(self.get_value_and_gradient_wrt_w,
-																self.W,
-																turning_angle=math.pi/2)
+			self.W, signal = GD.gradient_descent_l1(self.get_value_and_gradient_wrt_w, self.W, turning_angle=math.pi/2)
 
 			R = self.Z*self.W - self.X
 			f = (1/2)*np.sum(np.power(R, 2))
@@ -432,22 +427,18 @@ class PCA:
 			f_previous = f
 		self.X += self.mean
 
-			# It is important to center the data, otherwise it is lossing accuracy
+	# It is important to center the data, otherwise it is lossing accuracy
 	# due to assuming that the origin is part of the result.
-	def stochastic_regularized_PCA(self, k: int, l=0):
+	def stochastic_PCA(self, k: int, l=0):
 		self.k = k
 		self.mean = self.X.mean()
 		self.X -= self.mean
 		self.initialize_z_and_w(k)
 		f_previous = np.inf
 		for i in range(self.max_iteration):
-			self.Z, signal = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_z,	
-																self.Z,
-																past_gradient_ratio=0.95)
+			self.Z, signal = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_z, self.Z, past_gradient_ratio=0.95)
 
-			self.W, signal = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_w,
-																self.W,
-																past_gradient_ratio=0.95)
+			self.W, signal = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_w, self.W, past_gradient_ratio=0.95)
 
 			R = self.Z*self.W - self.X
 			f = (1/2)*np.sum(np.power(R, 2))
@@ -460,15 +451,13 @@ class PCA:
 			
 	# The data cannot be centered in this case as all negative values are
 	# eliminated. It is trading accuracy with the ability to interpret.
-	def regularized_PCA_non_negative_matrix_factorization(self, k: int):
+	def PCA_non_negative_matrix_factorization(self, k: int):
 		self.initialize_z_and_w(k)
 		f_previous = np.inf
 		for i in range(self.max_iteration):
-			self.Z, signal = GD.gradient_descent_non_negative(self.get_value_and_gradient_wrt_z,
-																self.Z)
+			self.Z, signal = GD.gradient_descent_non_negative(self.get_value_and_gradient_wrt_z, self.Z)
 
-			self.W, signal = GD.gradient_descent_non_negative(self.get_value_and_gradient_wrt_w,
-																self.W)
+			self.W, signal = GD.gradient_descent_non_negative(self.get_value_and_gradient_wrt_w, self.W)
 
 			R = self.Z*self.W - self.X
 			f = (1/2)*np.sum(np.power(R, 2))
@@ -484,7 +473,7 @@ for f in glob.glob("*.jpg"):
 
 images = np.matrix(images)
 a=PCA(images)
-a.stochastic_regularized_PCA(4)
+a.stochastic_PCA(4)
 
 #a=PCA(np.matrix([[1,2,3,11,12,13],[4,5,6,14,15,16],[7,8,9,17,18,19],[0,0,0,0,0,0],[1,1,1,1,1,1],[2,2,2,2,2,2]]).astype(np.float64))
 #a=PCA(np.matrix(np.random.rand(10000,10000)))
