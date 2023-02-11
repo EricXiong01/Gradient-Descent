@@ -26,14 +26,15 @@ class GD:
 		alpha = min(1.0, 1.0/np.sum(np.abs(g_prev)))
 		angle = math.cos(turning_angle)
 		if past_gradient_ratio != 0:
-			past_gradient = g_prev
+			past_gradient_magnitude = la.norm(g_prev)
 		g_bearing = 2
 
 		for i in range(max_iteration):
 			w_next = w_prev - alpha*g_prev
 			f_next, g_next = objective_function(w_next)
 			if past_gradient_ratio != 0:
-				g_next = (1-past_gradient_ratio)*g_next + past_gradient_ratio*past_gradient
+				w_next = w_prev - alpha*((1-past_gradient_ratio)*g_next + past_gradient_ratio*g_prev)
+				f_next, g_next = objective_function(w_next)
 			if turning_angle != math.pi:
 				g_bearing = np.sum(np.multiply(g_prev, g_next)) / (la.norm(g_prev)*la.norm(g_next))				
 
@@ -42,19 +43,28 @@ class GD:
 				if alpha_new == 0:
 					return (w_prev, True)
 				alpha = alpha_new
-				w_next = w_prev - alpha*g_prev
-				f_next, g_next = objective_function(w_next)
-				if past_gradient_ratio != 0:
-					g_next = (1-past_gradient_ratio)*g_next + past_gradient_ratio*past_gradient
+				if past_gradient_ratio == 0:
+					w_next = w_prev - alpha*g_prev
+					f_next, g_next = objective_function(w_next)
+				else:
+					w_next = w_prev - alpha*((1-past_gradient_ratio)*g_next + past_gradient_ratio*g_prev)
+					f_next, g_next = objective_function(w_next)
 				if turning_angle != math.pi:
 					g_bearing = np.sum(np.multiply(g_prev, g_next)) / (la.norm(g_prev)*la.norm(g_next))
+					
+			if past_gradient_ratio != 0:
+				past_gradient_magnitude = (1-past_gradient_ratio)*la.norm(g_next) + past_gradient_ratio*past_gradient_magnitude
 
 			w_prev = w_next
 			f_prev = f_next
 			g_prev = g_next
 
-			if la.norm(g_prev) <= epsilon:
-				return (w_prev, True)
+			if past_gradient_ratio == 0:
+				if la.norm(g_prev) <= epsilon:
+					return (w_prev, True)
+			else:
+				if past_gradient_magnitude <= epsilon:
+					return (w_prev, True)
 		
 		return (w_prev, False)
 	
@@ -471,11 +481,11 @@ images = []
 for f in glob.glob("*.jpg"):
     images.append(np.asarray(np.reshape(Image.open(f).convert('L'), -1), np.float64))
 
-images = np.matrix(images)
-a=PCA(images)
-a.stochastic_PCA(4)
+#images = np.matrix(images)
+#a=PCA(images)
+#a.stochastic_PCA(4)
 
-#a=PCA(np.matrix([[1,2,3,11,12,13],[4,5,6,14,15,16],[7,8,9,17,18,19],[0,0,0,0,0,0],[1,1,1,1,1,1],[2,2,2,2,2,2]]).astype(np.float64))
+a=PCA(np.matrix([[1,2,3,11,12,13],[4,5,6,14,15,16],[7,8,9,17,18,19],[0,0,0,0,0,0],[1,1,1,1,1,1],[2,2,2,2,2,2]]).astype(np.float64))
 #a=PCA(np.matrix(np.random.rand(10000,10000)))
-#a.stochastic_regularized_PCA(4)
-#print((a.Z*a.W+a.mean).round().astype(int))
+a.stochastic_PCA(3)
+print((a.Z*a.W+a.mean).round().astype(int))
