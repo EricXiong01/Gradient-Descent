@@ -20,12 +20,13 @@ class GD:
 	# It will perform at most max_iteration cycles of gradient descent.
 	# Returns a tuple of resulted w and a boolean. True if it is able find 
 	# a point that is close enough to a minima, false otherwise.
-	def gradient_descent(objective_function, w, turning_angle=math.pi, past_gradient_ratio=0, epsilon=1e-3, max_iteration=50):
+	def gradient_descent(objective_function, w, turning_angle=math.pi, past_gradient_ratio=0, epsilon=1e-2, max_iteration=100):
 		w_prev = w
 		f_prev, g_prev = objective_function(w)
 		alpha = min(1.0, 1.0/np.sum(np.abs(g_prev)))
 		angle = math.cos(turning_angle)
 		if past_gradient_ratio != 0:
+			past_gradient = g_prev
 			past_gradient_magnitude = la.norm(g_prev)
 		g_bearing = 2
 
@@ -33,7 +34,7 @@ class GD:
 			w_next = w_prev - alpha*g_prev
 			f_next, g_next = objective_function(w_next)
 			if past_gradient_ratio != 0:
-				w_next = w_prev - alpha*((1-past_gradient_ratio)*g_next + past_gradient_ratio*g_prev)
+				w_next = w_prev - alpha*((1-past_gradient_ratio)*g_next + past_gradient_ratio*past_gradient)
 				f_next, g_next = objective_function(w_next)
 			if turning_angle != math.pi:
 				g_bearing = np.sum(np.multiply(g_prev, g_next)) / (la.norm(g_prev)*la.norm(g_next))				
@@ -47,12 +48,13 @@ class GD:
 					w_next = w_prev - alpha*g_prev
 					f_next, g_next = objective_function(w_next)
 				else:
-					w_next = w_prev - alpha*((1-past_gradient_ratio)*g_next + past_gradient_ratio*g_prev)
+					w_next = w_prev - alpha*((1-past_gradient_ratio)*g_next + past_gradient_ratio*past_gradient)
 					f_next, g_next = objective_function(w_next)
 				if turning_angle != math.pi:
 					g_bearing = np.sum(np.multiply(g_prev, g_next)) / (la.norm(g_prev)*la.norm(g_next))
 					
 			if past_gradient_ratio != 0:
+				past_gradient = (1-past_gradient_ratio)*g_next + past_gradient_ratio*past_gradient
 				past_gradient_magnitude = (1-past_gradient_ratio)*la.norm(g_next) + past_gradient_ratio*past_gradient_magnitude
 
 			w_prev = w_next
@@ -446,14 +448,14 @@ class PCA:
 		self.initialize_z_and_w(k)
 		f_previous = np.inf
 		for i in range(self.max_iteration):
-			self.Z, signal = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_z, self.Z, past_gradient_ratio=0.95)
+			self.Z, signalz = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_z, self.Z, past_gradient_ratio=0.95)
 
-			self.W, signal = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_w, self.W, past_gradient_ratio=0.95)
-
+			self.W, signalw = GD.gradient_descent(self.get_stochastic_value_and_gradient_wrt_w, self.W, past_gradient_ratio=0.95)
+	 
 			R = self.Z*self.W - self.X
 			f = (1/2)*np.sum(np.power(R, 2))
 			
-			if (f_previous - f)/(self.n*self.d) < self.epsilon:
+			if (f_previous - f)/(self.n*self.d) < self.epsilon and signalz == True and signalw == True:
 				break
 			
 			f_previous = f
@@ -487,5 +489,5 @@ for f in glob.glob("*.jpg"):
 
 a=PCA(np.matrix([[1,2,3,11,12,13],[4,5,6,14,15,16],[7,8,9,17,18,19],[0,0,0,0,0,0],[1,1,1,1,1,1],[2,2,2,2,2,2]]).astype(np.float64))
 #a=PCA(np.matrix(np.random.rand(10000,10000)))
-a.stochastic_PCA(3)
+a.stochastic_PCA(2)
 print((a.Z*a.W+a.mean).round().astype(int))
