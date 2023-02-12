@@ -419,16 +419,16 @@ class PCA:
 
 	# It is important to center the data, otherwise it is lossing accuracy
 	# due to assuming that the origin is part of the result.
-	def regularized_PCA(self, k: int, l=0):
+	def regularized_PCA(self, k: int, l=1):
 		self.k = k
 		self.mean = self.X.mean()
 		self.X -= self.mean
 		self.initialize_z_and_w(k)
 		f_previous = np.inf
 		for i in range(self.max_iteration):
-			self.Z, signal = GD.gradient_descent_l1(self.get_value_and_gradient_wrt_z, self.Z, turning_angle=math.pi/2)
+			self.Z, signal = GD.gradient_descent_l1(self.get_value_and_gradient_wrt_z, self.Z, l=l, turning_angle=math.pi/2)
 
-			self.W, signal = GD.gradient_descent_l1(self.get_value_and_gradient_wrt_w, self.W, turning_angle=math.pi/2)
+			self.W, signal = GD.gradient_descent_l1(self.get_value_and_gradient_wrt_w, self.W, l=l, turning_angle=math.pi/2)
 
 			R = self.Z*self.W - self.X
 			f = (1/2)*np.sum(np.power(R, 2))
@@ -441,7 +441,7 @@ class PCA:
 
 	# It is important to center the data, otherwise it is lossing accuracy
 	# due to assuming that the origin is part of the result.
-	def stochastic_PCA(self, k: int, l=0):
+	def stochastic_PCA(self, k: int):
 		self.k = k
 		self.mean = self.X.mean()
 		self.X -= self.mean
