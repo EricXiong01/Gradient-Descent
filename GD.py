@@ -384,7 +384,7 @@ class PCA:
 	# the residual, and the dR used during computing G is the derivative of f with
 	# respect to R.
 	def get_stochastic_value_and_gradient_wrt_z(self, Z):
-		index = np.random.randint(self.k)
+		index = np.random.randint(self.d)
 		W = self.W[:,index]
 		X = self.X[:,index]
 		dR = R = Z*W - X
